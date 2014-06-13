@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Mauricio Giraldo"]
   spec.email         = ["mgiraldo@gmail.com"]
   spec.description   = "Basic Gem to query URLs in parallel"
-  spec.summary       = "Using a basic Yaml file, Propeller can dispatch parallell request to a number of urls and collects the results in a hash or in a Junit formatted xml"
+  spec.summary       = "Using a basic Yaml file, Propeller can dispatch parallel request to a number of urls and collects the results in a hash or in a Junit formatted xml"
   spec.homepage      = "https://github.com/giraldomauricio/propeller"
   spec.license       = "MIT"
 
@@ -24,5 +24,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "parallel"
   spec.add_development_dependency "httparty"
-  spec.add_development_dependency "benchmark"
 end

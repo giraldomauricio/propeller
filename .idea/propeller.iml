@@ -198,7 +198,7 @@
     <orderEntry type="jdk" jdkName="RVM: jruby-1.7.9" jdkType="JRUBY_SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
-      <library name="propeller (v0.0.3, /Users/mgiraldo/Documents/JRuby/propeller) [path][gem]">
+      <library name="propeller (v0.0.4, /Users/mgiraldo/Documents/JRuby/propeller) [path][gem]">
         <CLASSES>
           <root url="file://$MODULE_DIR$/bin" />
           <root url="file://$MODULE_DIR$/lib" />
