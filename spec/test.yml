@@ -1,0 +1,10 @@
+Resources:
+  threads: 3
+  urls:
+    - http://appleadkfnodnfkd.com/
+    - http://www.apple.com/
+    - http://www.amazon.com/
+    - http://www.google.com/
+  params:
+      username: 'foo'
+      password: 'bar'
