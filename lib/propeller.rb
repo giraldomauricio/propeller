@@ -91,7 +91,8 @@ module Propeller
                 suite[:testcases] << testcase
 
               end
-            rescue
+            rescue Exception => e
+              puts e.inspect
               fails = fails + 1
             end
           end

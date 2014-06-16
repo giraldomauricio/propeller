@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "parallel"
   spec.add_development_dependency "httparty"
+  spec.add_development_dependency "webmock"
 end
