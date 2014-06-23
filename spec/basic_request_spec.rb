@@ -80,4 +80,15 @@ describe 'Validate basic run' do
     expect(result[:ok]).to eq(1)
   end
 
+  it 'should run based on the valid_url configuration file and give a junit output' do
+
+    stub_request(:post, "http://www.apple.com/").
+        with(:body => "username=foo&password=bar").
+        to_return(:status => 200, :body => "", :headers => {})
+
+    result = Propeller.run ["-f:" + Dir.pwd + "/bin/demo.yml", "-output:junit", "-output_file:" + Dir.pwd + "/test/results.xml"]
+    expect(result).to include('Results exported to')
+
+  end
+
 end

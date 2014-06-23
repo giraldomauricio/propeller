@@ -33,8 +33,6 @@ module Propeller
     if args
       args.each do|argument|
 
-        puts "Propeller v." + Propeller::VERSION
-
         arg = argument.split(':')
 
 
