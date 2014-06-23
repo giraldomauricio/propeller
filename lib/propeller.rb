@@ -71,9 +71,9 @@ module Propeller
                 runs = runs + 1
                 elapsed_time = Benchmark.realtime {
                   if(params['Resources']['params'])
-                    url_response = HTTParty.post(address, :body => params['Resources']['params'])
+                    url_response = HTTParty.post(address, :body => params['Resources']['params'], :verify => false)
                   else
-                    url_response = HTTParty.get(address)
+                    url_response = HTTParty.get(address, :verify => false)
                   end
                 }
                 case url_response.code

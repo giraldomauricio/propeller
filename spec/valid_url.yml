@@ -2,6 +2,7 @@ Resources:
   threads: 1
   urls:
     - http://www.apple.com/
+    - https://www.apple.com/
   params:
     username: 'foo'
     password: 'bar'
