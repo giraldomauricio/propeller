@@ -1,0 +1,6 @@
+Resources:
+  threads: 1
+  urls:
+    - http://www.apple.com/
+  assert:
+    max_time: -10

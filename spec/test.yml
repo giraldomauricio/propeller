@@ -6,5 +6,5 @@ Resources:
     - http://www.amazon.com/
     - http://www.google.com/
   params:
-      username: 'foo'
-      password: 'bar'
+    username: 'foo'
+    password: 'bar'

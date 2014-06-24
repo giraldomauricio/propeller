@@ -66,7 +66,7 @@ module Propeller
 
         time = Benchmark.realtime {
           Parallel.in_processes(params['Resources']['threads']) do
-            begin
+            #begin
               Parallel.map(params['Resources']['urls']) do |address|
                 runs = runs + 1
                 elapsed_time = Benchmark.realtime {
@@ -86,13 +86,22 @@ module Propeller
                 end
                 success = success + 1
                 testcase = {name: address,time: elapsed_time}
+                if(params['Resources']['assert'])
+                  if(params['Resources']['assert']['max_time'])
+                    if(elapsed_time.to_f > params['Resources']['assert']['max_time'].to_f )
+                      puts "~~~>" + elapsed_time.to_s + " vs. " + params['Resources']['assert']['max_time'].to_s
+                      error = error + 1
+                      fails = fails + 1
+                    end
+                  end
+                end
                 suite[:testcases] << testcase
 
               end
-            rescue Exception => e
-              puts e.inspect
-              fails = fails + 1
-            end
+            #rescue Exception => e
+              #puts e.inspect
+              #fails = fails + 1
+            #end
           end
         }
         suite[:errors] = error

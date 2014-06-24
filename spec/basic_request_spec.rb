@@ -91,4 +91,15 @@ describe 'Validate basic run' do
 
   end
 
+  it 'should validate the running time is more than max' do
+
+    stub_request(:get, "http://www.apple.com/").
+        to_return(:status => 200, :body => "", :headers => {})
+
+    result = Propeller.run ["-f:" + Dir.pwd + "/spec/assert.yml"]
+    expect(result[:runs]).to eq(1)
+    expect(result[:success]).to eq(1)
+    expect(result[:fails]).to eq(1)
+    expect(result[:ok]).to eq(1)
+  end
 end
