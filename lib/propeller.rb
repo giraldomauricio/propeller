@@ -76,22 +76,29 @@ module Propeller
                     url_response = HTTParty.get(address, :verify => false)
                   end
                 }
+                testcase = {name: address,time: elapsed_time, failures: []}
                 case url_response.code
                   when 200
                     ok = ok + 1
                   when 404
                     not_found = not_found + 1
+                    failure = {message:"Page not found", detail: address}
+                    testcase[:failures] << failure
                   when 500...600
                     error = error + 1
+                    failure = {message:"Error page", detail:"Error " + url_response.code.to_s}
+                    testcase[:failures] << failure
                 end
                 success = success + 1
-                testcase = {name: address,time: elapsed_time}
+
                 if(params['Resources']['assert'])
                   if(params['Resources']['assert']['max_time'])
                     if(elapsed_time.to_f > params['Resources']['assert']['max_time'].to_f )
-                      puts "~~~>" + elapsed_time.to_s + " vs. " + params['Resources']['assert']['max_time'].to_s
+                      failure = {message:"Response time exceeded", detail:"Response time exceeded expected value. Expected max = " + params['Resources']['assert']['max_time'].to_s + ", Received = " + elapsed_time.to_s}
+                      puts failure[:message]
                       error = error + 1
                       fails = fails + 1
+                      testcase[:failures] << failure
                     end
                   end
                 end
@@ -140,7 +147,18 @@ module Propeller
     xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
     xml = xml + "<testsuites errors=\"#{suites[:errors].to_s}\" failures=\"#{suites[:failures].to_s}\" skipped=\"0\" tests=\"#{suites[:tests].to_s}\" time=\"#{suites[:time].to_s}\" timestamp=\"#{suites[:timestamp].to_s}\">"
     xml = xml + "<testsuite name=\"Propeller Tests\" tests=\"#{suites[:suite][0][:tests].to_s}\" errors=\"#{suites[:suite][0][:errors].to_s}\" failures=\"#{suites[:suite][0][:failures].to_s}\" skipped=\"0\"><properties/>"
-    suites[:suite][0][:testcases].each { |test|  xml = xml + "<testcase name=\"#{test[:name]}\" time=\"#{test[:elapsed_time]}\"></testcase>"}
+    suites[:suite][0][:testcases].each { |test|
+      if(test[:failures].length > 0)
+        failures = ""
+        test[:failures].each { |failure|
+          failures = failures + "<failure message='" + failure[:message] + "'>" + failure[:detail] + "</failure>"
+        }
+        xml = xml + "<testcase name=\"#{test[:name]}\" time=\"#{test[:elapsed_time]}\">" + failures + "</testcase>"
+      else
+        xml = xml + "<testcase name=\"#{test[:name]}\" time=\"#{test[:elapsed_time]}\"></testcase>"
+      end
+
+    }
     xml = xml + "</testsuite></testsuites>"
     xml
   end
