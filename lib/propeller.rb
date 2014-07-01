@@ -52,7 +52,7 @@ module Propeller
       if(path_to_yaml && File.exists?(path_to_yaml))
 
         suites = {errors: 0, failures: 0, skipped: 0, tests: 0, time: 0, timestamp: 0, suite:[]}
-        suite = {errors: 0, failures: 0, skipped: 0, tests: 0, name: 'Propeller Test', testcases: []}
+        suite = {errors: 0, failures: 0, skipped: 0, tests: 0, time: 0, name: 'Propeller Test', testcases: []}
 
         params = load_params(path_to_yaml)
         runs = 0
@@ -63,7 +63,7 @@ module Propeller
         not_found = 0
         error = 0
         url_response = nil
-
+        code = 200
         time = Benchmark.realtime {
           Parallel.in_processes(params['Resources']['threads']) do
             #begin
@@ -71,15 +71,27 @@ module Propeller
                 runs = runs + 1
                 elapsed_time = Benchmark.realtime {
                   if(params['Resources']['params'])
-                    url_response = HTTParty.post(address, :body => params['Resources']['params'], :verify => false)
+                    begin
+                      url_response = HTTParty.post(address, :body => params['Resources']['params'], :verify => false)
+                      code = url_response.code
+                    rescue
+                      code = 700
+                    end
                   else
-                    url_response = HTTParty.get(address, :verify => false)
+                    begin
+                      url_response = HTTParty.get(address, :verify => false)
+                      code = url_response.code
+                    rescue
+                      code = 700
+                    end
+
                   end
                 }
-                testcase = {name: address,time: elapsed_time, failures: []}
-                case url_response.code
+                testcase = {name: address, time: elapsed_time, failures: []}
+                case code
                   when 200
                     ok = ok + 1
+                    success = success + 1
                   when 404
                     not_found = not_found + 1
                     failure = {message:"Page not found", detail: address}
@@ -88,22 +100,27 @@ module Propeller
                     error = error + 1
                     failure = {message:"Error page", detail:"Error " + url_response.code.to_s}
                     testcase[:failures] << failure
+                  when 700
+                    error = error + 1
+                    failure = {message:"Timeout", detail:"Timeout: " + address}
+                    testcase[:failures] << failure
                 end
-                success = success + 1
 
                 if(params['Resources']['assert'])
                   if(params['Resources']['assert']['max_time'])
                     if(elapsed_time.to_f > params['Resources']['assert']['max_time'].to_f )
                       failure = {message:"Response time exceeded", detail:"Response time exceeded expected value. Expected max = " + params['Resources']['assert']['max_time'].to_s + ", Received = " + elapsed_time.to_s}
-                      puts failure[:message]
+                      #puts failure[:message]
                       error = error + 1
                       fails = fails + 1
                       testcase[:failures] << failure
+                      suite[:error] = 1
+                      suite[:failures] = 1
                     end
                   end
                 end
+                suite[:time] = elapsed_time.to_s
                 suite[:testcases] << testcase
-
               end
             #rescue Exception => e
               #puts e.inspect
@@ -111,21 +128,21 @@ module Propeller
             #end
           end
         }
-        suite[:errors] = error
-        suite[:failures] = fails
         suite[:tests] = runs
-        suite[:time] = time
-        suite[:timestamp] = DateTime.now
+        suites[:errors] = error
+        suites[:failures] = fails
+        suites[:tests] = runs
+        suites[:time] = time.to_s
+        suites[:timestamp] = DateTime.now
         suites[:suite] << suite
-        junit_output suites
-        result = {runs: runs, result: 'Success', success: success, fails: fails, elapsed: time, ok: ok, not_found: not_found, error: error}
+        if output == 'junit'
+          File.open(output_file, 'w') { |file| file.write(junit_output suites) }
+          result = "Results exported to " + output_file
+        else
+          result = {runs: runs, result: 'Success', success: success, fails: fails, elapsed: time, ok: ok, not_found: not_found, error: error}
+        end
       else
         result = 'Propeller requires a configuration file'
-      end
-
-      if output == 'junit'
-        File.open(output_file, 'w') { |file| file.write(junit_output suites) }
-        result = "Results exported to " + output_file
       end
     else
       result = 'No arguments provided'
@@ -144,22 +161,24 @@ module Propeller
   end
 
   def self.junit_output suites
-    xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-    xml = xml + "<testsuites errors=\"#{suites[:errors].to_s}\" failures=\"#{suites[:failures].to_s}\" skipped=\"0\" tests=\"#{suites[:tests].to_s}\" time=\"#{suites[:time].to_s}\" timestamp=\"#{suites[:timestamp].to_s}\">"
-    xml = xml + "<testsuite name=\"Propeller Tests\" tests=\"#{suites[:suite][0][:tests].to_s}\" errors=\"#{suites[:suite][0][:errors].to_s}\" failures=\"#{suites[:suite][0][:failures].to_s}\" skipped=\"0\"><properties/>"
+
+    xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    xml = xml + "<testsuites errors=\"#{suites[:errors].to_s}\" failures=\"#{suites[:failures].to_s}\" skipped=\"0\" tests=\"#{suites[:tests].to_s}\" time=\"#{suites[:time].to_s}\" timestamp=\"#{suites[:timestamp].to_s}\">\n"
+    xml = xml + "\t<testsuite name=\"Propeller Tests\" tests=\"#{suites[:suite][0][:tests].to_s}\" errors=\"#{suites[:suite][0][:errors].to_s}\" failures=\"#{suites[:suite][0][:failures].to_s}\" skipped=\"0\"><properties/>\n"
     suites[:suite][0][:testcases].each { |test|
       if(test[:failures].length > 0)
         failures = ""
         test[:failures].each { |failure|
-          failures = failures + "<failure message='" + failure[:message] + "'>" + failure[:detail] + "</failure>"
+          failures = failures + "<failure message='" + failure[:message] + "'>" + failure[:detail] + "</failure>\n"
         }
-        xml = xml + "<testcase name=\"#{test[:name]}\" time=\"#{test[:elapsed_time]}\">" + failures + "</testcase>"
+        xml = xml + "\t\t<testcase name=\"#{test[:name]}\" time=\"#{test[:time]}\">" + failures + "</testcase>\n"
       else
-        xml = xml + "<testcase name=\"#{test[:name]}\" time=\"#{test[:elapsed_time]}\"></testcase>"
+        xml = xml + "\t\t<testcase name=\"#{test[:name]}\" time=\"#{test[:time]}\"></testcase>\n"
       end
 
     }
-    xml = xml + "</testsuite></testsuites>"
+    xml = xml + "\t</testsuite>\n"
+    xml = xml + "\t</testsuites>\n"
     xml
   end
 
